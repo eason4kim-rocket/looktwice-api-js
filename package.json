@@ -40,6 +40,10 @@
     "webhooks"
   ],
   "homepage": "https://looktwice.dev/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eason4kim-rocket/looktwice-api-js.git"
+  },
   "bugs": {
     "url": "https://looktwice.dev/support"
   },
