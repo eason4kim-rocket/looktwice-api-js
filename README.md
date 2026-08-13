@@ -1,4 +1,4 @@
-# looktwice
+# looktwice-api
 
 Official, dependency-free TypeScript SDK for the [LookTwice API](https://looktwice.dev).
 Validate business inputs, screen products against CPSC recall evidence, and watch important facts.
@@ -6,7 +6,7 @@ Validate business inputs, screen products against CPSC recall evidence, and watc
 ## Install
 
 ```bash
-npm install looktwice
+npm install looktwice-api
 ```
 
 Node.js 18 or newer is required. Modern browsers and edge runtimes can use the SDK when an API key can be stored securely; never expose a live key in public client-side code.
@@ -17,7 +17,7 @@ Create a key in the [LookTwice dashboard](https://looktwice.dev/dashboard), then
 
 ```ts
 import { randomUUID } from "node:crypto";
-import { LookTwice } from "looktwice";
+import { LookTwice } from "looktwice-api";
 
 const client = new LookTwice({
   apiKey: process.env.LOOKTWICE_API_KEY!,
@@ -57,7 +57,7 @@ client.prices.get();
 ## Typed errors
 
 ```ts
-import { LookTwiceError } from "looktwice";
+import { LookTwiceError } from "looktwice-api";
 
 try {
   await client.iban.check({ iban: "not-an-iban" }, { idempotencyKey: crypto.randomUUID() });

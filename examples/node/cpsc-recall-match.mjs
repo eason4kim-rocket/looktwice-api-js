@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import console from "node:console";
-import { LookTwice } from "looktwice";
+import { LookTwice } from "looktwice-api";
 
 const apiKey = process.env.LOOKTWICE_API_KEY;
 if (!apiKey) throw new Error("Set LOOKTWICE_API_KEY before running this example");

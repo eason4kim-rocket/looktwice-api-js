@@ -1,5 +1,5 @@
 {
-  "name": "looktwice",
+  "name": "looktwice-api",
   "version": "0.1.0",
   "description": "Official TypeScript SDK for LookTwice validation, CPSC recall screening, and evidence-backed watches.",
   "type": "module",
