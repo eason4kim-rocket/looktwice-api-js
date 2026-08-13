@@ -1,0 +1,211 @@
+{
+  "info": {
+    "_postman_id": "f9d8c20f-c5cb-4b97-a548-3dfb37a995bc",
+    "name": "LookTwice API",
+    "description": "Validate business inputs, screen products against CPSC recall evidence, and watch important facts. Documentation: https://looktwice.dev/docs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://api.looktwice.dev", "type": "string" },
+    { "key": "api_key", "value": "", "type": "string" },
+    { "key": "idempotency_key", "value": "", "type": "string" },
+    { "key": "catalog_id", "value": "", "type": "string" },
+    { "key": "watch_id", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{api_key}}", "type": "string" }]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('idempotency_key')) {",
+          "  pm.collectionVariables.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response is not a server error', () => pm.expect(pm.response.code).to.be.below(500));",
+          "if (pm.response.code >= 200 && pm.response.code < 300) {",
+          "  pm.test('Request ID is present', () => pm.expect(pm.response.headers.get('x-request-id')).to.exist);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Validators",
+      "item": [
+        {
+          "name": "Email Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"hello@example.com\"\n}" },
+            "url": "{{base_url}}/v1/email/check",
+            "description": "Checks syntax, MX, disposable, role, and free-provider signals. It does not probe whether the mailbox exists."
+          }
+        },
+        {
+          "name": "VAT Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country_code\": \"DE\",\n  \"vat_number\": \"123456789\"\n}"
+            },
+            "url": "{{base_url}}/v1/vat/check",
+            "description": "Checks a VAT number against VIES and returns the check time and request identifier when available."
+          }
+        },
+        {
+          "name": "IBAN Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"iban\": \"GB82 WEST 1234 5698 7654 32\"\n}" },
+            "url": "{{base_url}}/v1/iban/check",
+            "description": "Validates structure and checksum. It does not confirm that an account exists or belongs to someone."
+          }
+        },
+        {
+          "name": "Domain Check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"domain\": \"example.com\"\n}" },
+            "url": "{{base_url}}/v1/domain/check"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CPSC",
+      "item": [
+        {
+          "name": "Recall Match",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"Consumer product\",\n  \"upc\": \"805253435117\"\n}"
+            },
+            "url": "{{base_url}}/v1/cpsc/recall-match",
+            "description": "Screens the supplied identifiers against synchronized CPSC recalls and Product Safety Warnings. A none result is not a safety or legal clearance."
+          }
+        },
+        {
+          "name": "Create Catalog",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Demo catalog\"\n}" },
+            "url": "{{base_url}}/v1/cpsc/catalogs"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('catalog_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Catalog Items",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"external_id\": \"demo-001\",\n      \"product_name\": \"Consumer product\",\n      \"upc\": \"805253435117\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/v1/cpsc/catalogs/{{catalog_id}}/items"
+          }
+        },
+        {
+          "name": "List Active Matches",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/v1/cpsc/catalogs/{{catalog_id}}/matches?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Knowledge Watch",
+      "item": [
+        {
+          "name": "Create Watch",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/pricing\",\n  \"facts\": [\n    {\n      \"key\": \"price\",\n      \"description\": \"The advertised monthly price\"\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/v1/knowledge/watches"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) pm.collectionVariables.set('watch_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Watch",
+          "request": { "method": "GET", "url": "{{base_url}}/v1/knowledge/watches/{{watch_id}}" }
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Credit Balance",
+          "request": { "method": "GET", "url": "{{base_url}}/v1/credits/balance" }
+        },
+        {
+          "name": "Usage",
+          "request": { "method": "GET", "url": "{{base_url}}/v1/usage?limit=50" }
+        },
+        {
+          "name": "Prices",
+          "request": { "method": "GET", "url": "{{base_url}}/v1/prices" }
+        }
+      ]
+    }
+  ]
+}

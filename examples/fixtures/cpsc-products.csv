@@ -1,0 +1,3 @@
+external_id,product_name,brand,model,upc,description
+demo-001,Consumer product,,,805253435117,Known UPC fixture for testing exact identifier matching
+demo-002,Example stroller,Example Brand,MODEL-001,,Illustrative item; replace with a real catalog record

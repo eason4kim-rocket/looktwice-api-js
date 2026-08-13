@@ -1,0 +1,55 @@
+{
+  "name": "looktwice",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for LookTwice validation, CPSC recall screening, and evidence-backed watches.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "api",
+    "typescript",
+    "validation",
+    "vat",
+    "iban",
+    "cpsc",
+    "product-recalls",
+    "webhooks"
+  ],
+  "homepage": "https://looktwice.dev/docs",
+  "bugs": {
+    "url": "https://looktwice.dev/support"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.0",
+    "vitest": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
