@@ -1,7 +1,20 @@
 # looktwice-api
 
+[![npm version](https://img.shields.io/npm/v/looktwice-api)](https://www.npmjs.com/package/looktwice-api)
+[![license](https://img.shields.io/npm/l/looktwice-api)](./LICENSE)
+
 Official, dependency-free TypeScript SDK for the [LookTwice API](https://looktwice.dev).
-Validate business inputs, screen products against CPSC recall evidence, and watch important facts.
+Email, EU VAT, IBAN, and domain checks, plus evidence-backed CPSC recall screening.
+
+```bash
+curl -sS https://api.looktwice.dev/v1/vat/check \
+  -H "Authorization: Bearer $LOOKTWICE_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{"country_code":"DE","vat_number":"123456789"}'
+```
+
+OpenAPI: [https://api.looktwice.dev/docs/json](https://api.looktwice.dev/docs/json)
 
 ## Install
 
@@ -9,7 +22,17 @@ Validate business inputs, screen products against CPSC recall evidence, and watc
 npm install looktwice-api
 ```
 
-Node.js 18 or newer is required. Modern browsers and edge runtimes can use the SDK when an API key can be stored securely; never expose a live key in public client-side code.
+Node.js 18 or newer is required. Keep live API keys in server-side code.
+
+## Tools
+
+| Method | What it does | Does not claim |
+| --- | --- | --- |
+| `client.email.check` | Syntax, MX, disposable, role, free-provider signals | Mailbox existence |
+| `client.vat.check` | Live EU VIES result, returned business fields, request evidence | Permanent tax status |
+| `client.iban.check` | Country length and ISO 7064 MOD-97 | Account existence or ownership |
+| `client.domain.check` | DNS, MX, TLS, RDAP for a registrable domain | Website safety |
+| `client.cpsc.recallMatch` | Ranked candidates against CPSC recalls and warnings | Safety, legality, or clearance |
 
 ## Run your first check
 
@@ -53,6 +76,15 @@ client.credits.balance();
 client.usage.list();
 client.prices.get();
 ```
+
+## Compared with building it yourself
+
+| Need | Typical in-house path | What this SDK keeps explicit |
+| --- | --- | --- |
+| EU VAT | Call VIES, then invent retry and evidence storage | Valid / invalid / unavailable stay separate; request identifier and check time are returned |
+| Email | Regex plus a stale disposable list | MX and disposable signals; no SMTP probe |
+| IBAN | Regex or checksum-only library | Country length + MOD-97; no account-existence claim |
+| CPSC | Keyword search of the public feed | UPC/brand/model ranking with official URLs and timestamps |
 
 ## Typed errors
 
