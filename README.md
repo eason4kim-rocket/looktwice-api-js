@@ -22,7 +22,7 @@ OpenAPI: [https://api.looktwice.dev/docs/json](https://api.looktwice.dev/docs/js
 npm install looktwice-api
 ```
 
-Node.js 18 or newer is required. Keep live API keys in server-side code.
+Node.js 18 or newer is required. The SDK is intended for server-side applications; never expose a live API key in public browser code.
 
 ## Tools
 
@@ -111,6 +111,8 @@ const client = new LookTwice({
 ```
 
 Non-idempotent POST requests are not retried automatically. Keep one idempotency key for all retries of the same logical charged request; do not generate a new key for every network attempt.
+
+`client.domain.check` is a free, quota-limited POST without an idempotency key, so the SDK deliberately does not retry it after an ambiguous network failure.
 
 ## Honest product boundaries
 

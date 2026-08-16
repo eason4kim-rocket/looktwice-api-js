@@ -26,6 +26,7 @@ export class LookTwiceError extends Error {
     readonly details?: Record<string, unknown>,
   ) {
     super(message);
+    this.name = "LookTwiceError";
   }
 }
 
@@ -55,7 +56,7 @@ export class LookTwice {
   constructor(options: LookTwiceOptions) {
     this.apiKey = options.apiKey;
     this.baseUrl = (options.baseUrl ?? "https://api.looktwice.dev").replace(/\/$/, "");
-    this.customFetch = options.fetch ?? fetch;
+    this.customFetch = options.fetch ?? globalThis.fetch.bind(globalThis);
     this.maxRetries = Math.max(0, Math.floor(options.maxRetries ?? 2));
     this.retryDelayMs = Math.max(0, Math.floor(options.retryDelayMs ?? 250));
   }
@@ -95,17 +96,28 @@ export class LookTwice {
         ? lastNetworkError
         : new Error("LookTwice request failed before receiving a response");
     }
-    const payload =
-      response.status === 204
-        ? undefined
-        : ((await response.json()) as T & {
-            error?: {
-              code: string;
-              message: string;
-              request_id?: string;
-              details?: Record<string, unknown>;
-            };
-          });
+    const rawBody = await response.text();
+    const hasBody = rawBody.trim().length > 0;
+    let payload: unknown;
+    let invalidJson = false;
+
+    if (hasBody) {
+      try {
+        payload = JSON.parse(rawBody) as unknown;
+      } catch {
+        invalidJson = true;
+      }
+    }
+
+    const requestId = response.headers.get("x-request-id");
+    const invalidResponseDetails = invalidJson
+      ? {
+          content_type: response.headers.get("content-type"),
+          response_body: rawBody.slice(0, 500),
+          response_body_truncated: rawBody.length > 500,
+        }
+      : undefined;
+
     if (!response.ok) {
       const errorPayload = payload as
         | {
@@ -121,10 +133,21 @@ export class LookTwice {
         errorPayload?.error?.message ?? `LookTwice request failed (${response.status})`,
         response.status,
         errorPayload?.error?.code ?? "request_failed",
-        errorPayload?.error?.request_id ?? response.headers.get("x-request-id"),
-        errorPayload?.error?.details,
+        errorPayload?.error?.request_id ?? requestId,
+        errorPayload?.error?.details ?? invalidResponseDetails,
       );
     }
+
+    if (invalidJson) {
+      throw new LookTwiceError(
+        "LookTwice returned an invalid JSON response",
+        response.status,
+        "invalid_response",
+        requestId,
+        invalidResponseDetails,
+      );
+    }
+
     return payload as T;
   }
 
@@ -214,7 +237,8 @@ export class LookTwice {
       const query = new URLSearchParams();
       if (options.limit) query.set("limit", String(options.limit));
       if (options.cursor) query.set("cursor", options.cursor);
-      return this.request<ListResponse>(`/v1/usage${query.size ? `?${query}` : ""}`);
+      const queryString = query.toString();
+      return this.request<ListResponse>(`/v1/usage${queryString ? `?${queryString}` : ""}`);
     },
   };
 
